@@ -261,6 +261,16 @@
         <div class="start-container" id="startContainer">
             <h2>プログラミングの知識をテストしよう！</h2>
             <p>プログラミングに関する4択問題を出題します。<br>1回5問ずつランダムに出題され、正解率を記録します。</p>
+            
+            <!-- クイズデータ差し替え機能 -->
+            <div style="margin: 20px 0; padding: 15px; border: 2px dashed #ddd; border-radius: 8px; background: #f9f9f9;">
+                <h3 style="margin-top: 0; font-size: 1em; color: #555;">📁 クイズデータを差し替え (iPhone対応)</h3>
+                <input type="file" id="quizFileInput" accept=".json,.txt" style="margin-bottom: 10px; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <button onclick="loadQuizData()" style="background: #007bff; margin-right: 10px;">データを読み込む</button>
+                <button onclick="resetToDefault()" style="background: #6c757d;">デフォルトに戻す</button>
+                <p style="font-size: 0.8em; color: #666; margin-top: 10px;">JSON形式またはテキスト形式のクイズファイルを選択してください</p>
+            </div>
+            
             <button onclick="startQuiz()">クイズを始める</button>
             <button onclick="exportLog()" style="margin-top: 10px; background: #28a745;">ログをダウンロード</button>
         </div>
@@ -335,7 +345,7 @@
         let quizRecords = []; // クイズ記録用配列
         let allQuizRecords = []; // 全セッションのクイズ記録
         const QUESTIONS_PER_ROUND = 5; // 1回あたりの問題数
-        const APP_VERSION = "0.1"; // アプリバージョン
+        const APP_VERSION = "1.01"; // アプリバージョン
         let autoNextTimeout = null; // 自動進行用タイマー
         let sessionId = null; // セッションID
         
@@ -1103,9 +1113,7 @@
             return newVersion;
         }
         
-        // ソート機能の実装
-        let currentSortBy = 'id';
-        let sortAscending = true;
+        // ソート機能の実装（重複削除）
         
         function sortStatistics(sortBy) {
             // 同じソート項目の場合は昇順/降順を切り替え
@@ -1230,6 +1238,98 @@
             else if (ua.includes('Edge')) browser = 'Edge';
             
             return { browser, os, userAgent: ua };
+        }
+        
+        // クイズデータ差し替え機能
+        let defaultQuizData = [...quizData]; // デフォルトデータを保存
+        
+        function loadQuizData() {
+            const fileInput = document.getElementById('quizFileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('ファイルを選択してください');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let newQuizData;
+                    const content = e.target.result;
+                    
+                    // JSON形式の場合
+                    if (file.name.endsWith('.json')) {
+                        newQuizData = JSON.parse(content);
+                    } 
+                    // テキスト形式の場合（簡単なフォーマット）
+                    else if (file.name.endsWith('.txt')) {
+                        newQuizData = parseTextQuizData(content);
+                    }
+                    
+                    // データ形式の検証
+                    if (validateQuizData(newQuizData)) {
+                        quizData = newQuizData;
+                        log(`クイズデータを更新しました: ${newQuizData.length}問`);
+                        alert(`✅ クイズデータを読み込みました！(${newQuizData.length}問)`);
+                        updateVersion(); // バージョンアップ
+                    } else {
+                        throw new Error('不正なデータ形式です');
+                    }
+                } catch (error) {
+                    alert('❌ ファイルの読み込みに失敗しました: ' + error.message);
+                    log('ファイル読み込みエラー: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function parseTextQuizData(content) {
+            // テキスト形式: 問題|選択肢1|選択肢2|選択肢3|選択肢4|正解番号
+            const lines = content.trim().split('\\n');
+            const questions = [];
+            let id = 1;
+            
+            for (const line of lines) {
+                if (line.trim()) {
+                    const parts = line.split('|');
+                    if (parts.length >= 6) {
+                        questions.push({
+                            id: id++,
+                            question: parts[0].trim(),
+                            options: [
+                                parts[1].trim(),
+                                parts[2].trim(),
+                                parts[3].trim(),
+                                parts[4].trim()
+                            ],
+                            correct: parseInt(parts[5].trim()) - 1 // 0-basedに変換
+                        });
+                    }
+                }
+            }
+            return questions;
+        }
+        
+        function validateQuizData(data) {
+            if (!Array.isArray(data) || data.length === 0) return false;
+            
+            return data.every(q => 
+                q.hasOwnProperty('question') &&
+                Array.isArray(q.options) && 
+                q.options.length === 4 &&
+                typeof q.correct === 'number' &&
+                q.correct >= 0 && 
+                q.correct < 4
+            );
+        }
+        
+        function resetToDefault() {
+            quizData = [...defaultQuizData];
+            document.getElementById('quizFileInput').value = '';
+            alert('✅ デフォルトのクイズデータに戻しました');
+            log('クイズデータをデフォルトに復元');
+            updateVersion(); // バージョンアップ
         }
         
         // 初期化（クロスプラットフォーム対応）
