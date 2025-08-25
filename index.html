@@ -543,7 +543,7 @@
         let quizRecords = []; // クイズ記録用配列
         let allQuizRecords = []; // 全セッションのクイズ記録
         const QUESTIONS_PER_ROUND = 5; // 1回あたりの問題数
-        const APP_VERSION = "1.06"; // アプリバージョン
+        const APP_VERSION = "1.07"; // アプリバージョン
         let autoNextTimeout = null; // 自動進行用タイマー
         let sessionId = null; // セッションID
         
@@ -993,8 +993,7 @@
             log(`クイズ終了: ${score}/${selectedQuestions.length}問正解 (${percentage}%)`);
             log(`所要時間: ${duration}秒`);
             
-            document.getElementById('quizContainer').classList.remove('active');
-            document.getElementById('scoreContainer').classList.add('active');
+            showScreen('scoreContainer');
             
             document.getElementById('finalScore').textContent = `${score} / ${selectedQuestions.length}`;
             
@@ -1558,7 +1557,7 @@
         // 画面切り替え機能
         function showScreen(screenName) {
             // 全ての画面を非表示
-            const screens = ['menuScreen', 'quizContainer', 'resultContainer', 'statisticsContainer'];
+            const screens = ['menuScreen', 'quizContainer', 'scoreContainer', 'statisticsContainer'];
             screens.forEach(screen => {
                 const element = document.getElementById(screen);
                 if (element) element.style.display = 'none';
@@ -1592,7 +1591,8 @@
         // 統計画面表示（既存の関数名を変更）
         function showStatistics() {
             showScreen('statisticsContainer');
-            displayStatistics();
+            const stats = calculateStatistics();
+            displayStatistics(stats);
         }
         
         // 動作確認テスト（強化版）
@@ -1613,7 +1613,7 @@
             if (typeof selectAnswer !== 'function') errors.push('selectAnswer関数未定義');
             
             // DOM要素の確認
-            const requiredElements = ['menuScreen', 'quizContainer', 'scoreContainer', 'questionText', 'optionsContainer'];
+            const requiredElements = ['menuScreen', 'quizContainer', 'scoreContainer', 'statisticsContainer', 'questionText', 'optionsContainer'];
             requiredElements.forEach(id => {
                 if (!document.getElementById(id)) errors.push(`${id}要素が見つからない`);
             });
