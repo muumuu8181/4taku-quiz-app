@@ -543,7 +543,7 @@
         let quizRecords = []; // クイズ記録用配列
         let allQuizRecords = []; // 全セッションのクイズ記録
         const QUESTIONS_PER_ROUND = 5; // 1回あたりの問題数
-        const APP_VERSION = "1.04"; // アプリバージョン
+        const APP_VERSION = "1.05"; // アプリバージョン
         let autoNextTimeout = null; // 自動進行用タイマー
         let sessionId = null; // セッションID
         
@@ -730,6 +730,15 @@
                 correct: 0
             }
         ];
+        
+        // クイズデータの初期化
+        let quizData = [...allQuestions]; // クイズ差し替え機能用
+        
+        // ランダム問題取得関数
+        function getRandomQuestions(count) {
+            const shuffled = shuffleArray([...quizData]);
+            return shuffled.slice(0, count);
+        }
         
         // ログ記録関数
         function log(message) {
@@ -1586,10 +1595,44 @@
             displayStatistics();
         }
         
+        // 動作確認テスト
+        function runInitializationTest() {
+            const errors = [];
+            
+            // 必須変数の確認
+            if (typeof quizData === 'undefined') errors.push('quizData未定義');
+            if (typeof allQuestions === 'undefined') errors.push('allQuestions未定義');
+            if (!Array.isArray(quizData)) errors.push('quizDataが配列ではない');
+            if (quizData.length === 0) errors.push('quizDataが空');
+            
+            // 必須関数の確認
+            if (typeof getRandomQuestions !== 'function') errors.push('getRandomQuestions関数未定義');
+            if (typeof startQuiz !== 'function') errors.push('startQuiz関数未定義');
+            if (typeof showScreen !== 'function') errors.push('showScreen関数未定義');
+            
+            // DOM要素の確認
+            if (!document.getElementById('menuScreen')) errors.push('menuScreen要素が見つからない');
+            if (!document.getElementById('quizContainer')) errors.push('quizContainer要素が見つからない');
+            
+            if (errors.length > 0) {
+                console.error('❌ 初期化テスト失敗:', errors);
+                return false;
+            }
+            
+            console.log('✅ 初期化テスト成功: すべての必須要素が正常');
+            return true;
+        }
+        
         // 初期化（クロスプラットフォーム対応）
         document.addEventListener('DOMContentLoaded', function() {
             const browserInfo = getBrowserInfo();
             log(`動作環境: ${browserInfo.browser} on ${browserInfo.os}`);
+            
+            // 動作確認テスト実行
+            if (!runInitializationTest()) {
+                alert('❌ アプリ初期化エラーが発生しました。コンソールをご確認ください。');
+                return;
+            }
             
             loadQuizRecords(); // 保存済みデータを読み込み
             log(`4択プログラムクイズアプリ v${APP_VERSION} 初期化完了`);
