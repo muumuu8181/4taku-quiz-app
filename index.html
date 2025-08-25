@@ -543,7 +543,7 @@
         let quizRecords = []; // クイズ記録用配列
         let allQuizRecords = []; // 全セッションのクイズ記録
         const QUESTIONS_PER_ROUND = 5; // 1回あたりの問題数
-        const APP_VERSION = "1.05"; // アプリバージョン
+        const APP_VERSION = "1.06"; // アプリバージョン
         let autoNextTimeout = null; // 自動進行用タイマー
         let sessionId = null; // セッションID
         
@@ -870,7 +870,7 @@
         
         // 問題表示
         function showQuestion() {
-            const question = questions[currentQuestionIndex];
+            const question = selectedQuestions[currentQuestionIndex];
             selectedAnswer = null;
             
             // 自動進行タイマーをクリア
@@ -887,7 +887,7 @@
             document.getElementById('correctCount').textContent = score;
             
             // プログレスバー更新
-            const progress = ((currentQuestionIndex) / questions.length) * 100;
+            const progress = ((currentQuestionIndex) / selectedQuestions.length) * 100;
             document.getElementById('progressBar').style.width = progress + '%';
             
             // 選択肢表示
@@ -910,7 +910,7 @@
             if (selectedAnswer !== null) return; // 既に回答済み
             
             selectedAnswer = answerIndex;
-            const question = questions[currentQuestionIndex];
+            const question = selectedQuestions[currentQuestionIndex];
             const options = document.querySelectorAll('.option');
             const answerTime = new Date();
             const isCorrect = answerIndex === question.correct;
@@ -977,7 +977,7 @@
             
             currentQuestionIndex++;
             
-            if (currentQuestionIndex >= questions.length) {
+            if (currentQuestionIndex >= selectedQuestions.length) {
                 showResults();
             } else {
                 showQuestion();
@@ -988,15 +988,15 @@
         function showResults() {
             const quizEndTime = new Date();
             const duration = Math.floor((quizEndTime - quizStartTime) / 1000);
-            const percentage = Math.round((score / questions.length) * 100);
+            const percentage = Math.round((score / selectedQuestions.length) * 100);
             
-            log(`クイズ終了: ${score}/${questions.length}問正解 (${percentage}%)`);
+            log(`クイズ終了: ${score}/${selectedQuestions.length}問正解 (${percentage}%)`);
             log(`所要時間: ${duration}秒`);
             
             document.getElementById('quizContainer').classList.remove('active');
             document.getElementById('scoreContainer').classList.add('active');
             
-            document.getElementById('finalScore').textContent = `${score} / ${questions.length}`;
+            document.getElementById('finalScore').textContent = `${score} / ${selectedQuestions.length}`;
             
             let message = '';
             if (percentage >= 90) {
@@ -1038,10 +1038,10 @@
                 exportTime: exportTime.toLocaleTimeString('ja-JP'),
                 sessionId: sessionId,
                 appVersion: APP_VERSION,
-                totalQuestions: questions.length || QUESTIONS_PER_ROUND,
+                totalQuestions: selectedQuestions.length || QUESTIONS_PER_ROUND,
                 currentQuestion: currentQuestionIndex + 1,
                 score: score,
-                accuracy: questions.length > 0 ? Math.round((score / questions.length) * 100) : 0,
+                accuracy: selectedQuestions.length > 0 ? Math.round((score / selectedQuestions.length) * 100) : 0,
                 quizRecords: quizRecords, // クイズ記録
                 summary: {
                     correctCount: quizRecords.filter(r => r.isCorrect).length,
@@ -1595,7 +1595,7 @@
             displayStatistics();
         }
         
-        // 動作確認テスト
+        // 動作確認テスト（強化版）
         function runInitializationTest() {
             const errors = [];
             
@@ -1609,10 +1609,24 @@
             if (typeof getRandomQuestions !== 'function') errors.push('getRandomQuestions関数未定義');
             if (typeof startQuiz !== 'function') errors.push('startQuiz関数未定義');
             if (typeof showScreen !== 'function') errors.push('showScreen関数未定義');
+            if (typeof showQuestion !== 'function') errors.push('showQuestion関数未定義');
+            if (typeof selectAnswer !== 'function') errors.push('selectAnswer関数未定義');
             
             // DOM要素の確認
-            if (!document.getElementById('menuScreen')) errors.push('menuScreen要素が見つからない');
-            if (!document.getElementById('quizContainer')) errors.push('quizContainer要素が見つからない');
+            const requiredElements = ['menuScreen', 'quizContainer', 'scoreContainer', 'questionText', 'optionsContainer'];
+            requiredElements.forEach(id => {
+                if (!document.getElementById(id)) errors.push(`${id}要素が見つからない`);
+            });
+            
+            // startQuizの動作テスト
+            try {
+                const testQuestions = getRandomQuestions(1);
+                if (!testQuestions || testQuestions.length === 0) {
+                    errors.push('getRandomQuestions関数が正常に動作しない');
+                }
+            } catch (e) {
+                errors.push(`getRandomQuestions関数でエラー: ${e.message}`);
+            }
             
             if (errors.length > 0) {
                 console.error('❌ 初期化テスト失敗:', errors);
