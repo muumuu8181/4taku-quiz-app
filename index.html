@@ -338,19 +338,79 @@
             }
         }
         
+        /* 2パネル構成のスタイル */
+        .top-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            height: 80px;
+            box-sizing: border-box;
+        }
+        
+        .top-panel h1 {
+            margin: 0;
+            font-size: 1.5em;
+            color: white;
+        }
+        
+        .top-panel .version {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .bottom-panel {
+            margin-top: 80px;
+            min-height: calc(100vh - 80px);
+            padding: 20px;
+            background: #f5f5f5;
+            box-sizing: border-box;
+        }
+        
+        .menu-screen, .quiz-screen, .result-screen, .statistics-screen {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-height: calc(100vh - 140px);
+        }
+        
+        /* 画面切り替えの表示制御 */
+        .screen {
+            display: none;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+
         /* iPhone横向き対応 */
         @media screen and (max-width: 768px) and (orientation: landscape) {
-            .container {
-                padding: 5px;
+            .top-panel {
+                height: 60px;
+                padding: 10px;
             }
             
-            h1 {
+            .top-panel h1 {
                 font-size: 1.2em;
-                margin-bottom: 10px;
             }
             
-            .quiz-container h2 {
-                font-size: 0.9em;
+            .bottom-panel {
+                margin-top: 60px;
+                min-height: calc(100vh - 60px);
             }
             
             button {
@@ -358,20 +418,49 @@
                 margin: 3px 0;
             }
         }
+        
+        /* iPhone縦向き対応 */
+        @media screen and (max-width: 480px) {
+            .top-panel {
+                height: 70px;
+                padding: 10px;
+            }
+            
+            .top-panel h1 {
+                font-size: 1.3em;
+            }
+            
+            .top-panel .version {
+                top: 5px;
+                right: 5px;
+                font-size: 0.7em;
+                padding: 3px 6px;
+            }
+            
+            .bottom-panel {
+                margin-top: 70px;
+                padding: 10px;
+                min-height: calc(100vh - 70px);
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- 上パネル: タイトル固定 -->
+    <div class="top-panel">
         <div class="version" id="versionDisplay">v0.1</div>
         <h1>🖥️ プログラム4択クイズ</h1>
-        
-        <!-- スタート画面 -->
-        <div class="start-container" id="startContainer">
+    </div>
+    
+    <!-- 下パネル: 切り替えコンテンツ -->
+    <div class="bottom-panel">
+        <!-- メニュー画面 -->
+        <div class="menu-screen" id="menuScreen">
             <h2>プログラミングの知識をテストしよう！</h2>
             <p>プログラミングに関する4択問題を出題します。<br>1回5問ずつランダムに出題され、正解率を記録します。</p>
             
             <!-- クイズデータ差し替え機能（折りたたみ式） -->
-            <div style="margin: 10px 0;">
+            <div style="margin: 20px 0;">
                 <button onclick="toggleQuizDataMenu()" style="background: #17a2b8; width: 100%; margin-bottom: 10px;">
                     📁 クイズデータを差し替え <span id="toggleIcon">▼</span>
                 </button>
@@ -383,8 +472,9 @@
                 </div>
             </div>
             
-            <button onclick="startQuiz()">クイズを始める</button>
-            <button onclick="exportLog()" style="margin-top: 10px; background: #28a745;">ログをダウンロード</button>
+            <button onclick="startQuiz()" style="background: #28a745; font-size: 1.2em; padding: 15px 30px; margin: 20px 0;">🚀 クイズを始める</button>
+            <button onclick="showStatistics()" style="background: #6f42c1; margin: 10px 5px;">📊 統計を見る</button>
+            <button onclick="exportLog()" style="background: #17a2b8; margin: 10px 5px;">📥 ログをダウンロード</button>
         </div>
         
         <!-- クイズ画面 -->
@@ -408,9 +498,7 @@
             
             <div class="buttons">
                 <button id="nextBtn" onclick="nextQuestion()" style="display: none;">次の問題（手動）</button>
-                <button onclick="goHome()" style="background: #6c757d;">ホームに戻る</button>
-                <button onclick="exportLog()" style="background: #28a745;">ログ出力</button>
-                <button onclick="showStatistics()" style="background: #17a2b8;">集計表示</button>
+                <button onclick="showMenu()" style="background: #6c757d;">🏠 メニューに戻る</button>
             </div>
         </div>
         
@@ -420,10 +508,8 @@
             <div class="score" id="finalScore"></div>
             <p id="scoreMessage"></p>
             <div class="buttons">
-                <button onclick="restartQuiz()">もう一度挑戦</button>
-                <button onclick="goHome()" style="background: #6c757d;">ホームに戻る</button>
-                <button onclick="exportLog()" style="background: #28a745;">結果をダウンロード</button>
-                <button onclick="showStatistics()" style="background: #17a2b8;">集計表示</button>
+                <button onclick="startQuiz()" style="background: #28a745;">🔄 もう一度挑戦</button>
+                <button onclick="showMenu()" style="background: #6c757d;">🏠 メニューに戻る</button>
             </div>
         </div>
         
@@ -440,8 +526,8 @@
             </div>
             <div id="statisticsContent"></div>
             <div class="buttons">
-                <button onclick="goHome()" style="background: #6c757d;">ホームに戻る</button>
-                <button onclick="exportStatistics()" style="background: #28a745;">統計データ出力</button>
+                <button onclick="showMenu()" style="background: #6c757d;">🏠 メニューに戻る</button>
+                <button onclick="exportStatistics()" style="background: #28a745;">📊 統計データ出力</button>
             </div>
         </div>
     </div>
@@ -457,7 +543,7 @@
         let quizRecords = []; // クイズ記録用配列
         let allQuizRecords = []; // 全セッションのクイズ記録
         const QUESTIONS_PER_ROUND = 5; // 1回あたりの問題数
-        const APP_VERSION = "1.03"; // アプリバージョン
+        const APP_VERSION = "1.04"; // アプリバージョン
         let autoNextTimeout = null; // 自動進行用タイマー
         let sessionId = null; // セッションID
         
@@ -1460,6 +1546,46 @@
             }
         }
         
+        // 画面切り替え機能
+        function showScreen(screenName) {
+            // 全ての画面を非表示
+            const screens = ['menuScreen', 'quizContainer', 'resultContainer', 'statisticsContainer'];
+            screens.forEach(screen => {
+                const element = document.getElementById(screen);
+                if (element) element.style.display = 'none';
+            });
+            
+            // 指定された画面のみ表示
+            const targetScreen = document.getElementById(screenName);
+            if (targetScreen) {
+                targetScreen.style.display = 'block';
+                log(`画面切り替え: ${screenName}`);
+            }
+        }
+        
+        // startQuiz関数を画面切り替え対応に修正
+        function startQuiz() {
+            showScreen('quizContainer'); // クイズ画面に切り替え
+            currentQuestionIndex = 0;
+            score = 0;
+            selectedQuestions = getRandomQuestions(QUESTIONS_PER_ROUND);
+            quizRecords = []; // クイズ記録をリセット
+            sessionId = Date.now().toString(); // 新しいセッションID生成
+            log(`新しいクイズセッション開始 (ID: ${sessionId})`);
+            showQuestion();
+        }
+        
+        // メニュー画面に戻る関数
+        function showMenu() {
+            showScreen('menuScreen');
+        }
+        
+        // 統計画面表示（既存の関数名を変更）
+        function showStatistics() {
+            showScreen('statisticsContainer');
+            displayStatistics();
+        }
+        
         // 初期化（クロスプラットフォーム対応）
         document.addEventListener('DOMContentLoaded', function() {
             const browserInfo = getBrowserInfo();
@@ -1469,7 +1595,8 @@
             log(`4択プログラムクイズアプリ v${APP_VERSION} 初期化完了`);
             log('✨ Windows PCでもindex.htmlをブラウザで開くだけで動作します！');
             
-            document.getElementById('startContainer').classList.add('active');
+            // 初期画面はメニュー画面
+            showScreen('menuScreen');
             document.getElementById('versionDisplay').textContent = `v${APP_VERSION}`;
         });
     </script>
