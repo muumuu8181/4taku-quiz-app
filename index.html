@@ -517,18 +517,22 @@
         
         <!-- 統計表示画面 -->
         <div class="score-container" id="statisticsContainer" style="display: none;">
-            <h2>📊 クイズ統計</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <h2 style="margin: 0;">📊 クイズ統計</h2>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="showMenu()" style="background: #6c757d;">🏠 メニューに戻る</button>
+                    <button onclick="exportStatistics()" style="background: #28a745;">📥 ダウンロード</button>
+                </div>
+            </div>
+            
             <div style="margin-bottom: 20px; text-align: center;">
                 <button onclick="sortStatistics('id')" style="margin: 5px; background: #17a2b8;">ID順ソート</button>
                 <button onclick="sortStatistics('attempts')" style="margin: 5px; background: #28a745;">挑戦回数順</button>
                 <button onclick="sortStatistics('correct')" style="margin: 5px; background: #ffc107; color: #000;">正解数順</button>
                 <button onclick="sortStatistics('accuracy')" style="margin: 5px; background: #dc3545;">正解率順</button>
             </div>
+            
             <div id="statisticsContent"></div>
-            <div class="buttons">
-                <button onclick="showMenu()" style="background: #6c757d;">🏠 メニューに戻る</button>
-                <button onclick="exportStatistics()" style="background: #28a745;">📊 統計データ出力</button>
-            </div>
         </div>
     </div>
 
@@ -543,7 +547,7 @@
         let quizRecords = []; // クイズ記録用配列
         let allQuizRecords = []; // 全セッションのクイズ記録
         const QUESTIONS_PER_ROUND = 5; // 1回あたりの問題数
-        const APP_VERSION = "1.07"; // アプリバージョン
+        const APP_VERSION = "1.08"; // アプリバージョン
         let autoNextTimeout = null; // 自動進行用タイマー
         let sessionId = null; // セッションID
         
@@ -784,20 +788,82 @@
             return shuffled;
         }
         
-        // 適応学習型問題選択
+        // 適応学習型問題選択（3回までバランス出現保証）
         function selectQuestionsWithAdaptiveLearning() {
             const sessionCount = new Set(allQuizRecords.map(r => r.sessionId)).size;
             
-            // 最初の3回は全ランダム
+            // 最初の3回はバランス出現保証
             if (sessionCount < 3) {
-                const shuffled = shuffleArray([...allQuestions]);
-                log(`初期ランダムモード (セッション${sessionCount + 1}/3)`);
-                return shuffled.slice(0, QUESTIONS_PER_ROUND);
+                return selectQuestionsBalanced(sessionCount + 1);
             }
             
             // 4回目以降は適応学習
             log('適応学習モード: 正解率に応じて出題頻度を調整');
             return selectQuestionsBasedOnAccuracy();
+        }
+        
+        // バランス出現保証問題選択（3回まで）
+        function selectQuestionsBalanced(currentSession) {
+            // 各問題の出現回数を集計
+            const questionAppearanceCount = {};
+            allQuestions.forEach(q => {
+                questionAppearanceCount[q.id] = 0;
+            });
+            
+            // 既存記録から出現回数をカウント
+            allQuizRecords.forEach(record => {
+                if (questionAppearanceCount.hasOwnProperty(record.questionId)) {
+                    questionAppearanceCount[record.questionId]++;
+                }
+            });
+            
+            // 出現回数でグループ化
+            const appearanceGroups = {
+                0: [], // 0回出現
+                1: [], // 1回出現  
+                2: [], // 2回出現
+                3: []  // 3回以上出現
+            };
+            
+            allQuestions.forEach(q => {
+                const count = questionAppearanceCount[q.id];
+                const groupKey = Math.min(count, 3);
+                appearanceGroups[groupKey].push(q);
+            });
+            
+            log(`バランス出現モード (セッション${currentSession}/3):`);
+            log(`  0回出現: ${appearanceGroups[0].length}問`);
+            log(`  1回出現: ${appearanceGroups[1].length}問`);
+            log(`  2回出現: ${appearanceGroups[2].length}問`);
+            log(`  3回以上: ${appearanceGroups[3].length}問`);
+            
+            // 優先度順で問題選択（出現回数の少ない順）
+            const selectedQuestions = [];
+            
+            // 0回→1回→2回の順で優先選択
+            for (let priority = 0; priority <= 2; priority++) {
+                const availableQuestions = appearanceGroups[priority];
+                if (availableQuestions.length === 0) continue;
+                
+                const shuffled = shuffleArray(availableQuestions);
+                const needed = QUESTIONS_PER_ROUND - selectedQuestions.length;
+                const toAdd = Math.min(needed, shuffled.length);
+                
+                selectedQuestions.push(...shuffled.slice(0, toAdd));
+                
+                if (selectedQuestions.length >= QUESTIONS_PER_ROUND) break;
+            }
+            
+            // 足りない場合は3回以上出現した問題からも選択
+            if (selectedQuestions.length < QUESTIONS_PER_ROUND) {
+                const shuffled = shuffleArray(appearanceGroups[3]);
+                const needed = QUESTIONS_PER_ROUND - selectedQuestions.length;
+                selectedQuestions.push(...shuffled.slice(0, needed));
+            }
+            
+            log(`選択された問題: ${selectedQuestions.map(q => `${q.id}(${questionAppearanceCount[q.id]}回)`).join(', ')}`);
+            
+            return shuffleArray(selectedQuestions);
         }
         
         // 正解率ベースの問題選択
@@ -1170,6 +1236,11 @@
                     </div>
                 </div>
                 
+                <div style="background: #ffffff; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #dee2e6;">
+                    <h3>🎯 正解・不正解パターン表示</h3>
+                    ${generateAnswerPattern(stats.questions)}
+                </div>
+                
                 <h3>📋 全問題統計一覧（Q001-Q030）</h3>
                 <div style="margin-bottom: 15px; padding: 10px; background: #e9ecef; border-radius: 5px;">
                     <strong>📊 並び替え:</strong>
@@ -1228,6 +1299,66 @@
             if (accuracy >= 80) return 'accuracy-high';
             if (accuracy >= 50) return 'accuracy-medium';
             return 'accuracy-low';
+        }
+        
+        // 正解・不正解パターン表示を生成
+        function generateAnswerPattern(questions) {
+            const sortedQuestions = questions.sort((a, b) => a.questionId.localeCompare(b.questionId));
+            let html = '<div style="font-family: monospace; line-height: 1.8; font-size: 1.1em;">';
+            
+            // 5問ずつ改行
+            const questionsPerLine = 5;
+            for (let i = 0; i < sortedQuestions.length; i += questionsPerLine) {
+                const lineQuestions = sortedQuestions.slice(i, i + questionsPerLine);
+                html += '<div style="margin: 5px 0;">';
+                
+                lineQuestions.forEach(q => {
+                    const pattern = generateQuestionPattern(q);
+                    const color = getPatternColor(q);
+                    html += `<span style="margin-right: 15px; color: ${color}; font-weight: bold;">
+                        ${q.questionId}:${pattern}
+                    </span>`;
+                });
+                
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            html += '<div style="margin-top: 15px; font-size: 0.9em; color: #6c757d;">';
+            html += '<p><strong>表記説明:</strong> ○=正解, ×=不正解, －=未挑戦 | 例: Q001:○××（3回挑戦、1回目正解、2-3回目不正解）</p>';
+            html += '</div>';
+            
+            return html;
+        }
+        
+        // 個別問題のパターン生成
+        function generateQuestionPattern(question) {
+            if (question.attempts === 0) return '－－－';
+            
+            // その問題の全回答履歴を取得
+            const questionRecords = allQuizRecords
+                .filter(r => r.questionId === question.questionId)
+                .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            
+            let pattern = '';
+            for (let i = 0; i < Math.min(3, questionRecords.length); i++) {
+                pattern += questionRecords[i].isCorrect ? '○' : '×';
+            }
+            
+            // 3回未満の場合は残りを－で埋める
+            while (pattern.length < 3) {
+                pattern += '－';
+            }
+            
+            return pattern;
+        }
+        
+        // パターンに応じた色を取得
+        function getPatternColor(question) {
+            if (question.attempts === 0) return '#6c757d'; // 未挑戦: グレー
+            if (question.accuracy === 100) return '#28a745'; // 全正解: グリーン
+            if (question.accuracy === 0) return '#dc3545'; // 全不正解: レッド
+            return '#fd7e14'; // 混在: オレンジ
         }
         
         // 統計ソート機能
