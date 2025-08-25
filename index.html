@@ -370,13 +370,17 @@
             <h2>プログラミングの知識をテストしよう！</h2>
             <p>プログラミングに関する4択問題を出題します。<br>1回5問ずつランダムに出題され、正解率を記録します。</p>
             
-            <!-- クイズデータ差し替え機能 -->
-            <div style="margin: 20px 0; padding: 15px; border: 2px dashed #ddd; border-radius: 8px; background: #f9f9f9;">
-                <h3 style="margin-top: 0; font-size: 1em; color: #555;">📁 クイズデータを差し替え (iPhone対応)</h3>
-                <input type="file" id="quizFileInput" accept=".json,.txt" style="margin-bottom: 10px; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                <button onclick="loadQuizData()" style="background: #007bff; margin-right: 10px;">データを読み込む</button>
-                <button onclick="resetToDefault()" style="background: #6c757d;">デフォルトに戻す</button>
-                <p style="font-size: 0.8em; color: #666; margin-top: 10px;">JSON形式またはテキスト形式のクイズファイルを選択してください</p>
+            <!-- クイズデータ差し替え機能（折りたたみ式） -->
+            <div style="margin: 10px 0;">
+                <button onclick="toggleQuizDataMenu()" style="background: #17a2b8; width: 100%; margin-bottom: 10px;">
+                    📁 クイズデータを差し替え <span id="toggleIcon">▼</span>
+                </button>
+                <div id="quizDataMenu" style="display: none; padding: 15px; border: 2px dashed #ddd; border-radius: 8px; background: #f9f9f9;">
+                    <input type="file" id="quizFileInput" accept=".json,.txt" style="margin-bottom: 10px; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <button onclick="loadQuizData()" style="background: #007bff; margin-right: 10px;">データを読み込む</button>
+                    <button onclick="resetToDefault()" style="background: #6c757d;">デフォルトに戻す</button>
+                    <p style="font-size: 0.8em; color: #666; margin-top: 10px;">JSON形式またはテキスト形式のクイズファイルを選択してください</p>
+                </div>
             </div>
             
             <button onclick="startQuiz()">クイズを始める</button>
@@ -453,7 +457,7 @@
         let quizRecords = []; // クイズ記録用配列
         let allQuizRecords = []; // 全セッションのクイズ記録
         const QUESTIONS_PER_ROUND = 5; // 1回あたりの問題数
-        const APP_VERSION = "1.02"; // アプリバージョン
+        const APP_VERSION = "1.03"; // アプリバージョン
         let autoNextTimeout = null; // 自動進行用タイマー
         let sessionId = null; // セッションID
         
@@ -1438,6 +1442,22 @@
             alert('✅ デフォルトのクイズデータに戻しました');
             log('クイズデータをデフォルトに復元');
             updateVersion(); // バージョンアップ
+        }
+        
+        // クイズデータメニューの折りたたみ機能
+        function toggleQuizDataMenu() {
+            const menu = document.getElementById('quizDataMenu');
+            const icon = document.getElementById('toggleIcon');
+            
+            if (menu.style.display === 'none') {
+                menu.style.display = 'block';
+                icon.textContent = '▲';
+                log('クイズデータ差し替えメニューを展開');
+            } else {
+                menu.style.display = 'none';
+                icon.textContent = '▼';
+                log('クイズデータ差し替えメニューを折りたたみ');
+            }
         }
         
         // 初期化（クロスプラットフォーム対応）
