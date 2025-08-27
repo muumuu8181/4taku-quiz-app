@@ -1378,31 +1378,35 @@
                     case 'id':
                         valueA = a.questionId;
                         valueB = b.questionId;
-                        break;
+                        // 文字列の場合は直接比較して返す
+                        const idComparison = valueA.localeCompare(valueB);
+                        return currentSortOrder === 'asc' ? idComparison : -idComparison;
+                        
                     case 'attempts':
                         valueA = a.attempts;
                         valueB = b.attempts;
                         break;
+                        
                     case 'correct':
                         valueA = a.correct;
                         valueB = b.correct;
                         break;
+                        
                     case 'accuracy':
                         valueA = a.accuracy;
                         valueB = b.accuracy;
                         break;
+                        
                     default:
                         valueA = a.questionId;
                         valueB = b.questionId;
+                        const defaultComparison = valueA.localeCompare(valueB);
+                        return currentSortOrder === 'asc' ? defaultComparison : -defaultComparison;
                 }
                 
-                if (typeof valueA === 'string') {
-                    const comparison = valueA.localeCompare(valueB);
-                    return currentSortOrder === 'asc' ? comparison : -comparison;
-                } else {
-                    const comparison = valueA - valueB;
-                    return currentSortOrder === 'asc' ? comparison : -comparison;
-                }
+                // 数値の場合の比較
+                const comparison = valueA - valueB;
+                return currentSortOrder === 'asc' ? comparison : -comparison;
             });
             
             displayStatistics(stats);
