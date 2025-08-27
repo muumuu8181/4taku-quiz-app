@@ -1,7 +1,7 @@
 // クイズ機能管理
 class QuizManager {
     constructor() {
-        this.APP_VERSION = '0.33';
+        this.APP_VERSION = '0.34';
         this.QUESTIONS_PER_ROUND = 5;
         this.AUTO_NEXT_DELAY = 200; // 0.2秒
         
@@ -96,23 +96,43 @@ class QuizManager {
             }
         });
         
-        // まだtargetCount回に達していない問題を抽出
-        const availableQuestions = allQuestions.filter(q => 
-            questionAppearanceCount[q.id] < targetCount
-        );
+        // 🚨 デバッグ情報表示
+        this.log(`=== フェーズ${targetCount} デバッグ ===`);
+        this.log(`総回答数: ${this.allQuizRecords.length}`);
+        const counts = Object.entries(questionAppearanceCount)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 5);
+        this.log(`出現回数TOP5: ${counts.map(([id, count]) => `${id}:${count}`).join(', ')}`);
+        
+        // まだtargetCount回に達していない問題を抽出（厳格チェック）
+        const availableQuestions = allQuestions.filter(q => {
+            const count = questionAppearanceCount[q.id];
+            const isAvailable = count < targetCount;
+            if (!isAvailable) {
+                this.log(`⛔ ${q.id} は${count}回出題済みのためスキップ`);
+            }
+            return isAvailable;
+        });
         
         this.log(`フェーズ${targetCount}: 選択可能問題 ${availableQuestions.length}問`);
+        this.log(`選択可能: ${availableQuestions.map(q => q.id).join(', ')}`);
         
         if (availableQuestions.length === 0) {
-            // 念のための fallback
-            return this.shuffleArray(allQuestions).slice(0, this.QUESTIONS_PER_ROUND);
+            this.log('🚨 エラー: 選択可能問題がありません！');
+            // フォールバック：回数が最も少ない問題を選択
+            const minCount = Math.min(...Object.values(questionAppearanceCount));
+            const fallbackQuestions = allQuestions.filter(q => 
+                questionAppearanceCount[q.id] === minCount
+            );
+            this.log(`フォールバック: 最少回数(${minCount}回)問題から選択`);
+            return this.shuffleArray(fallbackQuestions).slice(0, this.QUESTIONS_PER_ROUND);
         }
         
         // 選択可能問題からランダムに5問選択
         const shuffled = this.shuffleArray(availableQuestions);
         const selected = shuffled.slice(0, Math.min(this.QUESTIONS_PER_ROUND, shuffled.length));
         
-        this.log(`選択された問題: ${selected.map(q => `${q.id}(${questionAppearanceCount[q.id]}回)`).join(', ')}`);
+        this.log(`✅ 選択された問題: ${selected.map(q => `${q.id}(${questionAppearanceCount[q.id]}回)`).join(', ')}`);
         
         return selected;
     }
