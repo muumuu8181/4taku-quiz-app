@@ -547,7 +547,7 @@
         let quizRecords = []; // クイズ記録用配列
         let allQuizRecords = []; // 全セッションのクイズ記録
         const QUESTIONS_PER_ROUND = 5; // 1回あたりの問題数
-        const APP_VERSION = "0.21"; // アプリバージョン
+        const APP_VERSION = "0.22"; // アプリバージョン
         let autoNextTimeout = null; // 自動進行用タイマー
         let sessionId = null; // セッションID
         
@@ -1410,6 +1410,11 @@
             });
             
             displayStatistics(stats);
+            
+            // デバッグ：ソート結果をコンソールに出力
+            const debugData = stats.questionStats.slice(0, 5).map(q => `${q.questionId}:挑戦${q.attempts}回`).join(', ');
+            console.log(`ソート結果(${sortBy}/${currentSortOrder}): ${debugData}`);
+            
             log(`統計を${sortBy}で${currentSortOrder === 'asc' ? '昇順' : '降順'}ソート`);
         }
         
