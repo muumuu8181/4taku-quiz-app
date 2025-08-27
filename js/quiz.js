@@ -1,7 +1,7 @@
 // クイズ機能管理
 class QuizManager {
     constructor() {
-        this.APP_VERSION = '0.32';
+        this.APP_VERSION = '0.33';
         this.QUESTIONS_PER_ROUND = 5;
         this.AUTO_NEXT_DELAY = 200; // 0.2秒
         
@@ -54,19 +54,70 @@ class QuizManager {
         return shuffled.slice(0, count);
     }
 
-    // 適応学習型問題選択
+    // 段階的問題選択（1回目→2回目→3回目→適応学習）
     selectQuestionsWithAdaptiveLearning() {
-        const sessionCount = new Set(this.allQuizRecords.map(r => r.sessionId)).size;
+        const totalAnswers = this.allQuizRecords.length;
+        const totalQuestions = allQuestions.length; // 30問
         
-        if (sessionCount < 3) {
-            return this.selectQuestionsBalanced(sessionCount + 1);
+        // 第1フェーズ: 全問題1回ずつ (0-29回答)
+        if (totalAnswers < totalQuestions) {
+            this.log(`第1フェーズ: 全問題1回目 (${totalAnswers}/${totalQuestions})`);
+            return this.selectQuestionsForPhase(1);
         }
         
-        this.log('適応学習モード: 正解率に応じて出題頻度を調整');
+        // 第2フェーズ: 全問題2回ずつ (30-59回答) 
+        if (totalAnswers < totalQuestions * 2) {
+            this.log(`第2フェーズ: 全問題2回目 (${totalAnswers}/${totalQuestions * 2})`);
+            return this.selectQuestionsForPhase(2);
+        }
+        
+        // 第3フェーズ: 全問題3回ずつ (60-89回答)
+        if (totalAnswers < totalQuestions * 3) {
+            this.log(`第3フェーズ: 全問題3回目 (${totalAnswers}/${totalQuestions * 3})`);
+            return this.selectQuestionsForPhase(3);
+        }
+        
+        // 第4フェーズ以降: 適応学習開始 (90回答以降)
+        this.log(`適応学習フェーズ: 正答率に応じた出題 (${totalAnswers}回答済み)`);
         return this.selectQuestionsBasedOnAccuracy();
     }
 
-    // バランス出現保証問題選択
+    // フェーズ別問題選択（指定回数に達していない問題を優先）
+    selectQuestionsForPhase(targetCount) {
+        const questionAppearanceCount = {};
+        allQuestions.forEach(q => {
+            questionAppearanceCount[q.id] = 0;
+        });
+        
+        // 各問題の出現回数をカウント
+        this.allQuizRecords.forEach(record => {
+            if (questionAppearanceCount.hasOwnProperty(record.questionId)) {
+                questionAppearanceCount[record.questionId]++;
+            }
+        });
+        
+        // まだtargetCount回に達していない問題を抽出
+        const availableQuestions = allQuestions.filter(q => 
+            questionAppearanceCount[q.id] < targetCount
+        );
+        
+        this.log(`フェーズ${targetCount}: 選択可能問題 ${availableQuestions.length}問`);
+        
+        if (availableQuestions.length === 0) {
+            // 念のための fallback
+            return this.shuffleArray(allQuestions).slice(0, this.QUESTIONS_PER_ROUND);
+        }
+        
+        // 選択可能問題からランダムに5問選択
+        const shuffled = this.shuffleArray(availableQuestions);
+        const selected = shuffled.slice(0, Math.min(this.QUESTIONS_PER_ROUND, shuffled.length));
+        
+        this.log(`選択された問題: ${selected.map(q => `${q.id}(${questionAppearanceCount[q.id]}回)`).join(', ')}`);
+        
+        return selected;
+    }
+
+    // バランス出現保証問題選択（旧関数・使用停止予定）
     selectQuestionsBalanced(currentSession) {
         const questionAppearanceCount = {};
         allQuestions.forEach(q => {
