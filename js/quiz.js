@@ -1,7 +1,7 @@
 // クイズ機能管理
 class QuizManager {
     constructor() {
-        this.APP_VERSION = '0.34';
+        this.APP_VERSION = '0.35';
         this.QUESTIONS_PER_ROUND = 5;
         this.AUTO_NEXT_DELAY = 200; // 0.2秒
         
@@ -56,29 +56,49 @@ class QuizManager {
 
     // 段階的問題選択（1回目→2回目→3回目→適応学習）
     selectQuestionsWithAdaptiveLearning() {
-        const totalAnswers = this.allQuizRecords.length;
-        const totalQuestions = allQuestions.length; // 30問
+        const totalQuestions = allQuestions.length;
         
-        // 第1フェーズ: 全問題1回ずつ (0-29回答)
-        if (totalAnswers < totalQuestions) {
-            this.log(`第1フェーズ: 全問題1回目 (${totalAnswers}/${totalQuestions})`);
+        // 各問題の出現回数をカウント
+        const questionAppearanceCount = {};
+        allQuestions.forEach(q => {
+            questionAppearanceCount[q.id] = 0;
+        });
+        
+        this.allQuizRecords.forEach(record => {
+            if (questionAppearanceCount.hasOwnProperty(record.questionId)) {
+                questionAppearanceCount[record.questionId]++;
+            }
+        });
+        
+        // 最小出現回数を取得（現在のフェーズを判定）
+        const minAppearanceCount = Math.min(...Object.values(questionAppearanceCount));
+        const maxAppearanceCount = Math.max(...Object.values(questionAppearanceCount));
+        
+        this.log(`=== フェーズ判定デバッグ ===`);
+        this.log(`総問題数: ${totalQuestions}問`);
+        this.log(`最小出現回数: ${minAppearanceCount}回`);
+        this.log(`最大出現回数: ${maxAppearanceCount}回`);
+        
+        // 第1フェーズ: まだ1回も出題されていない問題がある
+        if (minAppearanceCount === 0) {
+            this.log(`第1フェーズ: 全問題1回目を完了中`);
             return this.selectQuestionsForPhase(1);
         }
         
-        // 第2フェーズ: 全問題2回ずつ (30-59回答) 
-        if (totalAnswers < totalQuestions * 2) {
-            this.log(`第2フェーズ: 全問題2回目 (${totalAnswers}/${totalQuestions * 2})`);
+        // 第2フェーズ: まだ2回目が完了していない問題がある
+        if (minAppearanceCount === 1) {
+            this.log(`第2フェーズ: 全問題2回目を完了中`);
             return this.selectQuestionsForPhase(2);
         }
         
-        // 第3フェーズ: 全問題3回ずつ (60-89回答)
-        if (totalAnswers < totalQuestions * 3) {
-            this.log(`第3フェーズ: 全問題3回目 (${totalAnswers}/${totalQuestions * 3})`);
+        // 第3フェーズ: まだ3回目が完了していない問題がある
+        if (minAppearanceCount === 2) {
+            this.log(`第3フェーズ: 全問題3回目を完了中`);
             return this.selectQuestionsForPhase(3);
         }
         
-        // 第4フェーズ以降: 適応学習開始 (90回答以降)
-        this.log(`適応学習フェーズ: 正答率に応じた出題 (${totalAnswers}回答済み)`);
+        // 第4フェーズ以降: 全問題が3回ずつ完了済み → 適応学習開始
+        this.log(`適応学習フェーズ: 全${totalQuestions}問が3回ずつ完了済み`);
         return this.selectQuestionsBasedOnAccuracy();
     }
 
