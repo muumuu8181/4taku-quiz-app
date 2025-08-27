@@ -1639,33 +1639,9 @@
             }
         }
         
-        // startQuiz関数を画面切り替え対応に修正
-        function startQuiz() {
-            showScreen('quizContainer'); // クイズ画面に切り替え
-            currentQuestionIndex = 0;
-            score = 0;
-            selectedQuestions = getRandomQuestions(QUESTIONS_PER_ROUND);
-            quizRecords = []; // クイズ記録をリセット
-            sessionId = Date.now().toString(); // 新しいセッションID生成
-            log(`新しいクイズセッション開始 (ID: ${sessionId})`);
-            showQuestion();
-        }
-        
         // メニュー画面に戻る関数
         function showMenu() {
             showScreen('menuScreen');
-        }
-        
-        // 統計画面表示（既存の関数名を変更）
-        function showStatistics() {
-            if (allQuizRecords.length === 0) {
-                alert('クイズ記録がありません。まずクイズに挑戦してください。');
-                return;
-            }
-            
-            showScreen('statisticsContainer');
-            const stats = calculateStatistics();
-            displayStatistics(stats);
         }
         
         // 動作確認テスト（強化版）
