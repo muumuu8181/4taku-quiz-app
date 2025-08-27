@@ -547,7 +547,7 @@
         let quizRecords = []; // クイズ記録用配列
         let allQuizRecords = []; // 全セッションのクイズ記録
         const QUESTIONS_PER_ROUND = 5; // 1回あたりの問題数
-        const APP_VERSION = "0.2"; // アプリバージョン
+        const APP_VERSION = "0.21"; // アプリバージョン
         let autoNextTimeout = null; // 自動進行用タイマー
         let sessionId = null; // セッションID
         
@@ -771,8 +771,7 @@
             score = 0;
             quizRecords = []; // クイズ記録をリセット
             
-            document.getElementById('startContainer').classList.remove('active');
-            document.getElementById('quizContainer').classList.add('active');
+            showScreen('quizContainer');
             document.getElementById('totalQuestions').textContent = QUESTIONS_PER_ROUND;
             
             showQuestion();
@@ -1079,18 +1078,13 @@
         
         // クイズ再開始
         function restartQuiz() {
-            document.getElementById('scoreContainer').classList.remove('active');
-            document.getElementById('startContainer').classList.add('active');
+            showScreen('menuScreen');
             log('クイズリスタート');
         }
         
         // ホームに戻る
         function goHome() {
-            // すべての画面を非表示にしてホーム画面を表示
-            document.getElementById('quizContainer').classList.remove('active');
-            document.getElementById('scoreContainer').classList.remove('active');
-            document.getElementById('statisticsContainer').style.display = 'none';
-            document.getElementById('startContainer').classList.add('active');
+            showScreen('menuScreen');
             log('ホーム画面に戻る');
         }
         
@@ -1151,10 +1145,7 @@
             const stats = calculateStatistics();
             
             // 統計表示画面を表示
-            document.getElementById('quizContainer').classList.remove('active');
-            document.getElementById('scoreContainer').classList.remove('active');
-            document.getElementById('startContainer').classList.remove('active');
-            document.getElementById('statisticsContainer').style.display = 'block';
+            showScreen('statisticsContainer');
             
             // 統計データをHTMLで表示
             displayStatistics(stats);
