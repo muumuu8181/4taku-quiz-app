@@ -547,7 +547,7 @@
         let quizRecords = []; // クイズ記録用配列
         let allQuizRecords = []; // 全セッションのクイズ記録
         const QUESTIONS_PER_ROUND = 5; // 1回あたりの問題数
-        const APP_VERSION = "1.08"; // アプリバージョン
+        const APP_VERSION = "0.2"; // アプリバージョン
         let autoNextTimeout = null; // 自動進行用タイマー
         let sessionId = null; // セッションID
         
@@ -1238,7 +1238,7 @@
                 
                 <div style="background: #ffffff; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #dee2e6;">
                     <h3>🎯 正解・不正解パターン表示</h3>
-                    ${generateAnswerPattern(stats.questions)}
+                    ${generateAnswerPattern(stats.questionStats)}
                 </div>
                 
                 <h3>📋 全問題統計一覧（Q001-Q030）</h3>
@@ -1303,6 +1303,9 @@
         
         // 正解・不正解パターン表示を生成
         function generateAnswerPattern(questions) {
+            if (!questions || !Array.isArray(questions)) {
+                return '<p>統計データがありません</p>';
+            }
             const sortedQuestions = questions.sort((a, b) => a.questionId.localeCompare(b.questionId));
             let html = '<div style="font-family: monospace; line-height: 1.8; font-size: 1.1em;">';
             
@@ -1441,10 +1444,12 @@
             log(`統計データをエクスポート: ${stats.totalAttempts}回の記録`);
         }
         
-        // バージョン更新関数
+        // バージョン更新関数（0.01ずつ増加）
         function updateVersion() {
             const currentVersion = parseFloat(APP_VERSION);
             const newVersion = (currentVersion + 0.01).toFixed(2);
+            
+            // 実際のAPP_VERSIONは更新しない（表示のみ）
             document.getElementById('versionDisplay').textContent = `v${newVersion}`;
             log(`バージョン更新: v${APP_VERSION} → v${newVersion}`);
             return newVersion;
@@ -1721,6 +1726,11 @@
         
         // 統計画面表示（既存の関数名を変更）
         function showStatistics() {
+            if (allQuizRecords.length === 0) {
+                alert('クイズ記録がありません。まずクイズに挑戦してください。');
+                return;
+            }
+            
             showScreen('statisticsContainer');
             const stats = calculateStatistics();
             displayStatistics(stats);
