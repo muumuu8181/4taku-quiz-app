@@ -67,6 +67,80 @@ class StorageManager {
         };
     }
 
+    // テストモード: データバックアップとリセット
+    switchToTestMode() {
+        const currentRecords = this.loadQuizRecords();
+        const currentDate = new Date().toISOString().slice(0, 10);
+        
+        // クイズ記録のバックアップ
+        const backupKey = `BACKUP_quizRecords_${currentDate}`;
+        localStorage.setItem(backupKey, JSON.stringify(currentRecords));
+        
+        // 問題データのバックアップ（allQuestionsを保存）
+        const backupQuestionsKey = 'BACKUP_questions_30problems';
+        localStorage.setItem(backupQuestionsKey, JSON.stringify(allQuestions));
+        
+        // 統計データをリセット
+        this.saveQuizRecords([]);
+        
+        console.log(`✅ テストモード開始:`);
+        console.log(`  - クイズ記録バックアップ: ${backupKey} (${currentRecords.length}件)`);
+        console.log(`  - 問題データバックアップ: ${backupQuestionsKey} (${allQuestions.length}問)`);
+        console.log(`  - 統計データリセット完了`);
+        
+        return {
+            backupKey,
+            backupQuestionsKey,
+            recordCount: currentRecords.length,
+            questionCount: allQuestions.length
+        };
+    }
+
+    // 本番データに復旧
+    restoreFromTestMode() {
+        const currentDate = new Date().toISOString().slice(0, 10);
+        const backupKey = `BACKUP_quizRecords_${currentDate}`;
+        
+        try {
+            const backupData = localStorage.getItem(backupKey);
+            if (backupData) {
+                const records = JSON.parse(backupData);
+                this.saveQuizRecords(records);
+                console.log(`✅ 本番データ復旧完了: ${records.length}件`);
+                return { success: true, recordCount: records.length };
+            } else {
+                console.warn(`⚠️ バックアップデータが見つかりません: ${backupKey}`);
+                return { success: false, error: 'バックアップが見つかりません' };
+            }
+        } catch (error) {
+            console.error('復旧エラー:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // バックアップ一覧取得
+    getBackupList() {
+        const backups = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('BACKUP_')) {
+                try {
+                    const data = localStorage.getItem(key);
+                    const parsedData = JSON.parse(data);
+                    backups.push({
+                        key: key,
+                        type: key.includes('questions') ? '問題データ' : 'クイズ記録',
+                        count: Array.isArray(parsedData) ? parsedData.length : '不明',
+                        size: data.length
+                    });
+                } catch (e) {
+                    // 無効なデータはスキップ
+                }
+            }
+        }
+        return backups;
+    }
+
     // データエクスポート
     exportData() {
         const allQuizRecords = this.loadQuizRecords();

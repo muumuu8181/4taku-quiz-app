@@ -9,7 +9,7 @@
 <body>
     <!-- 上パネル: タイトル固定 -->
     <div class="top-panel">
-        <div class="version" id="versionDisplay">v0.35</div>
+        <div class="version" id="versionDisplay">v0.36</div>
         <h1>🖥️ プログラム4択クイズ</h1>
     </div>
     
@@ -36,6 +36,14 @@
             <button onclick="startQuiz()" style="background: #28a745; font-size: 1.2em; padding: 15px 30px; margin: 20px 0;">🚀 クイズを始める</button>
             <button onclick="showStatistics()" style="background: #6f42c1; margin: 10px 5px;">📊 統計を見る</button>
             <button onclick="exportLog()" style="background: #17a2b8; margin: 10px 5px;">📥 ログをダウンロード</button>
+            
+            <div style="margin-top: 30px; padding: 15px; border: 2px dashed #ffc107; border-radius: 8px; background: #fff3cd;">
+                <h3 style="color: #856404; margin-bottom: 10px;">🧪 テストモード</h3>
+                <p style="font-size: 0.9em; color: #856404; margin-bottom: 15px;">現在のデータをバックアップして10問でテスト</p>
+                <button onclick="switchToTestMode()" style="background: #ffc107; color: #000; margin: 5px;">📦 テストモード開始</button>
+                <button onclick="restoreFromTestMode()" style="background: #dc3545; margin: 5px;">🔄 本番データに戻す</button>
+                <button onclick="showBackupList()" style="background: #6c757d; margin: 5px;">📋 バックアップ一覧</button>
+            </div>
         </div>
         
         <!-- クイズ画面 -->

@@ -139,3 +139,36 @@ function loadQuizData() {
 function resetToDefault() {
     quizManager.resetToDefault();
 }
+
+function switchToTestMode() {
+    const result = storageManager.switchToTestMode();
+    alert(`テストモード開始！\n- バックアップ: ${result.recordCount}件のクイズ記録\n- 問題数: 30問→10問\n- 統計リセット完了\n\nページをリフレッシュしてください`);
+    location.reload();
+}
+
+function restoreFromTestMode() {
+    if (confirm('本番データに戻しますか？\n現在のテストデータは削除されます。')) {
+        const result = storageManager.restoreFromTestMode();
+        if (result.success) {
+            alert(`本番データに復旧完了！\n復旧件数: ${result.recordCount}件\n\nページをリフレッシュしてください`);
+            location.reload();
+        } else {
+            alert(`復旧に失敗しました: ${result.error}`);
+        }
+    }
+}
+
+function showBackupList() {
+    const backups = storageManager.getBackupList();
+    if (backups.length === 0) {
+        alert('バックアップデータがありません');
+        return;
+    }
+    
+    let message = '📋 バックアップ一覧:\n\n';
+    backups.forEach(backup => {
+        message += `${backup.type}: ${backup.count}件 (${backup.key})\n`;
+    });
+    
+    alert(message);
+}
