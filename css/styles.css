@@ -70,13 +70,16 @@ h1 {
 }
 
 .option {
-    background: #f1f3f4;
-    border: 2px solid transparent;
+    background: #ffffff;
+    color: #333;
+    border: 2px solid #ddd;
     padding: 15px 20px;
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 1.1em;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .option:hover {
