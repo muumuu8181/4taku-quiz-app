@@ -547,7 +547,7 @@
         let quizRecords = []; // クイズ記録用配列
         let allQuizRecords = []; // 全セッションのクイズ記録
         const QUESTIONS_PER_ROUND = 5; // 1回あたりの問題数
-        const APP_VERSION = "0.24"; // アプリバージョン
+        const APP_VERSION = "0.25"; // アプリバージョン
         let autoNextTimeout = null; // 自動進行用タイマー
         let sessionId = null; // セッションID
         
@@ -1144,6 +1144,9 @@
             // 統計データを集計
             const stats = calculateStatistics();
             
+            // 初期表示はID順でソート
+            stats.questionStats.sort((a, b) => a.questionId.localeCompare(b.questionId));
+            
             // 統計表示画面を表示
             showScreen('statisticsContainer');
             
@@ -1191,8 +1194,8 @@
                 }
             });
             
-            // 全問題を含めた結果（デフォルトはID順）
-            const allQuestionStats = Object.values(questionStats).sort((a, b) => a.questionId.localeCompare(b.questionId));
+            // 全問題を含めた結果（ソート順序は呼び出し元で制御）
+            const allQuestionStats = Object.values(questionStats);
             
             return {
                 totalAttempts,
@@ -1410,11 +1413,15 @@
                 return result;
             });
             
+            // ソート後のデータを確認（displayStatistics実行前）
+            const beforeDisplay = stats.questionStats.slice(0, 5).map(q => `${q.questionId}:挑戦${q.attempts}回`).join(', ');
+            console.log(`displayStatistics実行前(${sortBy}/${currentSortOrder}): ${beforeDisplay}`);
+            
             displayStatistics(stats);
             
-            // デバッグ：ソート結果をコンソールに出力
-            const debugData = stats.questionStats.slice(0, 5).map(q => `${q.questionId}:挑戦${q.attempts}回`).join(', ');
-            console.log(`ソート結果(${sortBy}/${currentSortOrder}): ${debugData}`);
+            // displayStatistics実行後のデータを確認
+            const afterDisplay = stats.questionStats.slice(0, 5).map(q => `${q.questionId}:挑戦${q.attempts}回`).join(', ');
+            console.log(`displayStatistics実行後(${sortBy}/${currentSortOrder}): ${afterDisplay}`);
             
             log(`統計を${sortBy}で${currentSortOrder === 'asc' ? '昇順' : '降順'}ソート`);
         }
