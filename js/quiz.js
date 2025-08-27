@@ -1,7 +1,7 @@
 // クイズ機能管理
 class QuizManager {
     constructor() {
-        this.APP_VERSION = '0.29';
+        this.APP_VERSION = '0.30';
         this.QUESTIONS_PER_ROUND = 5;
         this.AUTO_NEXT_DELAY = 200; // 0.2秒
         

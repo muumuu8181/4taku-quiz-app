@@ -7,12 +7,34 @@ class StorageManager {
     // クイズ記録の読み込み
     loadQuizRecords() {
         try {
-            const data = localStorage.getItem(this.STORAGE_KEY);
-            if (!data) {
-                return [];
+            // 新形式のデータを確認
+            const newData = localStorage.getItem(this.STORAGE_KEY);
+            if (newData) {
+                const parsed = JSON.parse(newData);
+                return Array.isArray(parsed) ? parsed : [];
             }
-            const parsed = JSON.parse(data);
-            return Array.isArray(parsed) ? parsed : [];
+            
+            // 旧形式のデータキーを試す
+            const oldKeys = ['quizAppData', 'quizRecords', 'allQuizRecords'];
+            for (const oldKey of oldKeys) {
+                const oldData = localStorage.getItem(oldKey);
+                if (oldData) {
+                    try {
+                        const parsed = JSON.parse(oldData);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            console.log(`旧データを発見しました (${oldKey}): ${parsed.length}件`);
+                            // 新形式に移行保存
+                            this.saveQuizRecords(parsed);
+                            console.log('データ移行完了');
+                            return parsed;
+                        }
+                    } catch (e) {
+                        console.warn(`旧データ ${oldKey} の解析に失敗:`, e);
+                    }
+                }
+            }
+            
+            return [];
         } catch (error) {
             console.error('クイズ記録の読み込みに失敗:', error);
             return [];
