@@ -79,7 +79,14 @@ class StatisticsManager {
         });
 
         container.innerHTML = `
-            <h2>📊 学習統計</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <h2 style="margin: 0;">📊 学習統計</h2>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="uiManager.showMenu()" style="background: #6c757d;">🏠 メニューに戻る</button>
+                    <button onclick="statisticsManager.exportStatistics()" style="background: #28a745;">📥 ダウンロード</button>
+                </div>
+            </div>
+            
             <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
                 <strong>全体統計:</strong> 
                 総回答数: ${stats.totalAttempts}回 | 
@@ -87,7 +94,7 @@ class StatisticsManager {
                 全問題数: ${stats.questionStats.length}問
             </div>
             
-            <div style="margin: 20px 0;">
+            <div style="margin: 20px 0; text-align: center;">
                 <strong>ソート:</strong>
                 <button onclick="statisticsManager.sortStatistics('attempts')" style="margin: 0 5px; padding: 8px 15px;">挑戦回数順</button>
                 <button onclick="statisticsManager.sortStatistics('correct')" style="margin: 0 5px; padding: 8px 15px;">正解数順</button>
@@ -121,11 +128,6 @@ class StatisticsManager {
                     `).join('')}
                 </tbody>
             </table>
-            
-            <div style="margin-top: 20px;">
-                <button onclick="statisticsManager.exportStatistics()" style="background: #17a2b8; margin: 10px 5px;">📥 統計データをダウンロード</button>
-                <button onclick="uiManager.showMenu()" style="background: #6c757d; margin: 10px 5px;">🏠 メニューに戻る</button>
-            </div>
         `;
     }
 

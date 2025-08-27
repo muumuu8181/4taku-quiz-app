@@ -1,0 +1,68 @@
+name: Design Guard - Prevent Unauthorized UI Changes
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  design-guard:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Check for unauthorized design changes
+      run: |
+        echo "🔍 Checking for unauthorized design changes..."
+        node .design-guard.js
+    
+    - name: Verify critical design elements
+      run: |
+        echo "🔧 Verifying critical design elements..."
+        
+        # Check LocalStorage key (絶対に変更禁止)
+        if ! grep -q "'allQuizRecords'" js/storage.js; then
+          echo "❌ CRITICAL: LocalStorage key changed from 'allQuizRecords'"
+          echo "This will cause user data loss!"
+          exit 1
+        fi
+        
+        # Check statistics screen button layout (メニューボタンが上部にあるか)
+        if ! grep -q "justify-content: space-between" js/statistics.js; then
+          echo "❌ DESIGN VIOLATION: Statistics buttons moved from top position"
+          echo "User explicitly requested buttons to stay at top, not bottom"
+          exit 1
+        fi
+        
+        # Check for prohibited bottom button placement in statistics
+        if grep -q "margin-top.*20px.*button.*メニューに戻る" js/statistics.js; then
+          echo "❌ DESIGN VIOLATION: Menu button moved to bottom (prohibited)"
+          exit 1
+        fi
+        
+        # Check if statistics container structure maintained
+        if ! grep -q "<h2.*📊.*統計" js/statistics.js; then
+          echo "❌ DESIGN VIOLATION: Statistics header structure changed"
+          exit 1
+        fi
+        
+        echo "✅ All critical design elements verified"
+    
+    - name: Comment on PR if design changes detected
+      if: failure() && github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '🚨 **Design Change Alert**\n\nUnauthorized UI changes detected. Please review DESIGN_LOCK.md and ensure changes are approved.\n\n**Protected elements:**\n- Statistics screen button positions\n- LocalStorage key names\n- Core UI layouts\n\nContact the project owner for design change approval.'
+          })
