@@ -547,7 +547,7 @@
         let quizRecords = []; // クイズ記録用配列
         let allQuizRecords = []; // 全セッションのクイズ記録
         const QUESTIONS_PER_ROUND = 5; // 1回あたりの問題数
-        const APP_VERSION = "0.25"; // アプリバージョン
+        const APP_VERSION = "0.26"; // アプリバージョン
         let autoNextTimeout = null; // 自動進行用タイマー
         let sessionId = null; // セッションID
         
@@ -1300,7 +1300,7 @@
             if (!questions || !Array.isArray(questions)) {
                 return '<p>統計データがありません</p>';
             }
-            const sortedQuestions = questions.sort((a, b) => a.questionId.localeCompare(b.questionId));
+            const sortedQuestions = [...questions].sort((a, b) => a.questionId.localeCompare(b.questionId));
             let html = '<div style="font-family: monospace; line-height: 1.8; font-size: 1.1em;">';
             
             // 5問ずつ改行
