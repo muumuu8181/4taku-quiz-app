@@ -547,7 +547,7 @@
         let quizRecords = []; // クイズ記録用配列
         let allQuizRecords = []; // 全セッションのクイズ記録
         const QUESTIONS_PER_ROUND = 5; // 1回あたりの問題数
-        const APP_VERSION = "0.22"; // アプリバージョン
+        const APP_VERSION = "0.23"; // アプリバージョン
         let autoNextTimeout = null; // 自動進行用タイマー
         let sessionId = null; // セッションID
         
@@ -1371,16 +1371,16 @@
             const stats = calculateStatistics();
             
             // ソート実行
+            console.log(`ソート開始: sortBy=${sortBy}, currentSortOrder=${currentSortOrder}`);
+            
             stats.questionStats.sort((a, b) => {
                 let valueA, valueB;
                 
                 switch(sortBy) {
                     case 'id':
-                        valueA = a.questionId;
-                        valueB = b.questionId;
-                        // 文字列の場合は直接比較して返す
-                        const idComparison = valueA.localeCompare(valueB);
-                        return currentSortOrder === 'asc' ? idComparison : -idComparison;
+                        return currentSortOrder === 'asc' ? 
+                            a.questionId.localeCompare(b.questionId) : 
+                            b.questionId.localeCompare(a.questionId);
                         
                     case 'attempts':
                         valueA = a.attempts;
@@ -1398,15 +1398,17 @@
                         break;
                         
                     default:
-                        valueA = a.questionId;
-                        valueB = b.questionId;
-                        const defaultComparison = valueA.localeCompare(valueB);
-                        return currentSortOrder === 'asc' ? defaultComparison : -defaultComparison;
+                        return currentSortOrder === 'asc' ? 
+                            a.questionId.localeCompare(b.questionId) : 
+                            b.questionId.localeCompare(a.questionId);
                 }
                 
-                // 数値の場合の比較
+                // 数値の場合の比較（デバッグ付き）
+                console.log(`比較: ${a.questionId}(${valueA}) vs ${b.questionId}(${valueB})`);
                 const comparison = valueA - valueB;
-                return currentSortOrder === 'asc' ? comparison : -comparison;
+                const result = currentSortOrder === 'asc' ? comparison : -comparison;
+                console.log(`結果: ${result}`);
+                return result;
             });
             
             displayStatistics(stats);
