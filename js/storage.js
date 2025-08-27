@@ -1,7 +1,7 @@
 // データ保存・読み込み機能
 class StorageManager {
     constructor() {
-        this.STORAGE_KEY = 'quizAppData_v1';
+        this.STORAGE_KEY = 'allQuizRecords'; // 旧バージョンと同じキーを使用して継続性確保
     }
 
     // クイズ記録の読み込み
@@ -14,8 +14,8 @@ class StorageManager {
                 return Array.isArray(parsed) ? parsed : [];
             }
             
-            // 旧形式のデータキーを試す
-            const oldKeys = ['quizAppData', 'quizRecords', 'allQuizRecords'];
+            // 旧形式のデータキーを試す（最新の0.27は'allQuizRecords'を使用）
+            const oldKeys = ['allQuizRecords', 'quizAppData', 'quizRecords'];
             for (const oldKey of oldKeys) {
                 const oldData = localStorage.getItem(oldKey);
                 if (oldData) {
