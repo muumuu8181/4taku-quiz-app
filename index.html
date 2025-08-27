@@ -9,7 +9,7 @@
 <body>
     <!-- 上パネル: タイトル固定 -->
     <div class="top-panel">
-        <div class="version" id="versionDisplay">v0.36</div>
+        <div class="version" id="versionDisplay">v0.4</div>
         <h1>🖥️ プログラム4択クイズ</h1>
     </div>
     
@@ -94,11 +94,25 @@
         </div>
     </div>
 
-    <!-- JavaScript読み込み -->
+    <!-- JavaScript読み込み（3チーム開発構造） -->
+    <!-- データ -->
     <script src="data/questions.js"></script>
+    
+    <!-- チームC: コア機能 -->
+    <script src="js/core/quiz-logic.js"></script>
+    <script src="js/core/statistics-calculator.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/statistics.js"></script>
+    
+    <!-- チームA: シミュレーション機能 -->
+    <script src="js/simulation/data-generator.js"></script>
+    <script src="js/simulation/performance-tester.js"></script>
+    
+    <!-- メイン機能 -->
     <script src="js/quiz.js"></script>
-    <script src="js/ui.js"></script>
+    
+    <!-- チームB: UI機能 -->
+    <script src="js/ui/ui-manager.js"></script>
+    <script src="js/ui/app-initialization.js"></script>
 </body>
 </html>

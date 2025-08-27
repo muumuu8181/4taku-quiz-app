@@ -1,7 +1,7 @@
 // クイズ機能管理
 class QuizManager {
     constructor() {
-        this.APP_VERSION = '0.36';
+        this.APP_VERSION = '0.4';
         this.QUESTIONS_PER_ROUND = 5;
         this.AUTO_NEXT_DELAY = 200; // 0.2秒
         
@@ -55,106 +55,24 @@ class QuizManager {
     }
 
     // 段階的問題選択（1回目→2回目→3回目→適応学習）
+    // コアロジックに委譲
     selectQuestionsWithAdaptiveLearning() {
-        const totalQuestions = allQuestions.length;
-        
-        // 各問題の出現回数をカウント
-        const questionAppearanceCount = {};
-        allQuestions.forEach(q => {
-            questionAppearanceCount[q.id] = 0;
-        });
-        
-        this.allQuizRecords.forEach(record => {
-            if (questionAppearanceCount.hasOwnProperty(record.questionId)) {
-                questionAppearanceCount[record.questionId]++;
-            }
-        });
-        
-        // 最小出現回数を取得（現在のフェーズを判定）
-        const minAppearanceCount = Math.min(...Object.values(questionAppearanceCount));
-        const maxAppearanceCount = Math.max(...Object.values(questionAppearanceCount));
-        
-        this.log(`=== フェーズ判定デバッグ ===`);
-        this.log(`総問題数: ${totalQuestions}問`);
-        this.log(`最小出現回数: ${minAppearanceCount}回`);
-        this.log(`最大出現回数: ${maxAppearanceCount}回`);
-        
-        // 第1フェーズ: まだ1回も出題されていない問題がある
-        if (minAppearanceCount === 0) {
-            this.log(`第1フェーズ: 全問題1回目を完了中`);
-            return this.selectQuestionsForPhase(1);
-        }
-        
-        // 第2フェーズ: まだ2回目が完了していない問題がある
-        if (minAppearanceCount === 1) {
-            this.log(`第2フェーズ: 全問題2回目を完了中`);
-            return this.selectQuestionsForPhase(2);
-        }
-        
-        // 第3フェーズ: まだ3回目が完了していない問題がある
-        if (minAppearanceCount === 2) {
-            this.log(`第3フェーズ: 全問題3回目を完了中`);
-            return this.selectQuestionsForPhase(3);
-        }
-        
-        // 第4フェーズ以降: 全問題が3回ずつ完了済み → 適応学習開始
-        this.log(`適応学習フェーズ: 全${totalQuestions}問が3回ずつ完了済み`);
-        return this.selectQuestionsBasedOnAccuracy();
+        return quizLogic.selectQuestionsWithAdaptiveLearning(
+            this.allQuizRecords, 
+            allQuestions, 
+            (message) => this.log(message)
+        );
     }
 
     // フェーズ別問題選択（指定回数に達していない問題を優先）
+    // コアロジックに委譲
     selectQuestionsForPhase(targetCount) {
-        const questionAppearanceCount = {};
-        allQuestions.forEach(q => {
-            questionAppearanceCount[q.id] = 0;
-        });
-        
-        // 各問題の出現回数をカウント
-        this.allQuizRecords.forEach(record => {
-            if (questionAppearanceCount.hasOwnProperty(record.questionId)) {
-                questionAppearanceCount[record.questionId]++;
-            }
-        });
-        
-        // 🚨 デバッグ情報表示
-        this.log(`=== フェーズ${targetCount} デバッグ ===`);
-        this.log(`総回答数: ${this.allQuizRecords.length}`);
-        const counts = Object.entries(questionAppearanceCount)
-            .sort(([,a], [,b]) => b - a)
-            .slice(0, 5);
-        this.log(`出現回数TOP5: ${counts.map(([id, count]) => `${id}:${count}`).join(', ')}`);
-        
-        // まだtargetCount回に達していない問題を抽出（厳格チェック）
-        const availableQuestions = allQuestions.filter(q => {
-            const count = questionAppearanceCount[q.id];
-            const isAvailable = count < targetCount;
-            if (!isAvailable) {
-                this.log(`⛔ ${q.id} は${count}回出題済みのためスキップ`);
-            }
-            return isAvailable;
-        });
-        
-        this.log(`フェーズ${targetCount}: 選択可能問題 ${availableQuestions.length}問`);
-        this.log(`選択可能: ${availableQuestions.map(q => q.id).join(', ')}`);
-        
-        if (availableQuestions.length === 0) {
-            this.log('🚨 エラー: 選択可能問題がありません！');
-            // フォールバック：回数が最も少ない問題を選択
-            const minCount = Math.min(...Object.values(questionAppearanceCount));
-            const fallbackQuestions = allQuestions.filter(q => 
-                questionAppearanceCount[q.id] === minCount
-            );
-            this.log(`フォールバック: 最少回数(${minCount}回)問題から選択`);
-            return this.shuffleArray(fallbackQuestions).slice(0, this.QUESTIONS_PER_ROUND);
-        }
-        
-        // 選択可能問題からランダムに5問選択
-        const shuffled = this.shuffleArray(availableQuestions);
-        const selected = shuffled.slice(0, Math.min(this.QUESTIONS_PER_ROUND, shuffled.length));
-        
-        this.log(`✅ 選択された問題: ${selected.map(q => `${q.id}(${questionAppearanceCount[q.id]}回)`).join(', ')}`);
-        
-        return selected;
+        return quizLogic.selectQuestionsForPhase(
+            targetCount, 
+            this.allQuizRecords, 
+            allQuestions, 
+            (message) => this.log(message)
+        );
     }
 
     // バランス出現保証問題選択（旧関数・使用停止予定）
@@ -211,50 +129,13 @@ class QuizManager {
     }
 
     // 正解率ベース問題選択
+    // コアロジックに委譲
     selectQuestionsBasedOnAccuracy() {
-        const stats = statisticsManager.calculateStatistics();
-        const questionPool = [];
-        
-        allQuestions.forEach(question => {
-            const questionStat = stats.questionStats.find(s => s.questionId === question.id);
-            let weight;
-            
-            if (!questionStat || questionStat.attempts === 0) {
-                weight = 5;
-                this.log(`${question.id}: 未挑戦 - 出題重み${weight}`);
-            } else {
-                const accuracy = questionStat.accuracy;
-                if (accuracy < 50) {
-                    weight = 4;
-                    this.log(`${question.id}: 正解率${accuracy}% - 出題重み${weight}`);
-                } else if (accuracy < 80) {
-                    weight = 2;
-                    this.log(`${question.id}: 正解率${accuracy}% - 出題重み${weight}`);
-                } else {
-                    weight = 1;
-                    this.log(`${question.id}: 正解率${accuracy}% - 出題重み${weight}`);
-                }
-            }
-            
-            for (let i = 0; i < weight; i++) {
-                questionPool.push(question);
-            }
-        });
-        
-        const shuffled = this.shuffleArray(questionPool);
-        const selectedQuestions = [];
-        const usedQuestionIds = new Set();
-        
-        for (const question of shuffled) {
-            if (!usedQuestionIds.has(question.id)) {
-                selectedQuestions.push(question);
-                usedQuestionIds.add(question.id);
-                if (selectedQuestions.length >= this.QUESTIONS_PER_ROUND) break;
-            }
-        }
-        
-        this.log(`最終選択: ${selectedQuestions.map(q => q.id).join(', ')}`);
-        return selectedQuestions;
+        return quizLogic.selectQuestionsBasedOnAccuracy(
+            this.allQuizRecords, 
+            allQuestions, 
+            (message) => this.log(message)
+        );
     }
 
     // クイズ開始
